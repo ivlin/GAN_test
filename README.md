@@ -10,4 +10,9 @@ Generative adversarial networks are a generative model of learning  that has sho
 
 Here I use MNIST to try and test the generator and discriminator of a semisupervised DCGAN. Typically, the discriminator network only classifies datapoints as fake or real. This means that it serves very little purpose outside of providing feedback to improve the generator. However, with some modification, the discriminator can be modified to also complete classification tasks. Rather than labelling data points as real or fake, real data points can be assigned true calsses. The discriminator will then produce a vector of size c+1 indicating the likelihood between the c classes and being a fake.
 
-##
+### Sample Size Test
+This folder consists of attempts to tune the batch size hyperparameter. This contains:
+ - mnist_supervised.py - a control MNIST classifier
+ - mnist_unsupervised.py - a traditional DCGAN where the discriminator only attempts to distinguish between "real" and "fake"
+ - mnist_semisupervised.py - a modified version of the DCGAN where the discriminator attempts to distinguish between "fake" or one of the ten real numbers
+

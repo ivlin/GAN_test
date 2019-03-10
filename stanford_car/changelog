@@ -1,0 +1,5 @@
+notes:
+
+1->2
+generator kernel size 3->5
+Adam (beta1) 0.5->default (0.9)

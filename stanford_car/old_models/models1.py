@@ -118,8 +118,8 @@ def train_gan(args):
 
     gen_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_y), logits=fake_y))
 
-    disc_train_step = tf.train.AdamOptimizer(0.0005).minimize(disc_loss,var_list=disc_vars)
-    gen_train_step = tf.train.AdamOptimizer(0.0005).minimize(gen_loss,var_list=gen_vars)
+    disc_train_step = tf.train.AdamOptimizer(0.0005,beta1=0.5).minimize(disc_loss,var_list=disc_vars)
+    gen_train_step = tf.train.AdamOptimizer(0.0005,beta1=0.5).minimize(gen_loss,var_list=gen_vars)
 
     init=tf.global_variables_initializer()
     sess = tf.Session()

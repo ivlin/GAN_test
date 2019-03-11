@@ -3,3 +3,8 @@ notes:
 1->2
 generator kernel size 3->5
 Adam (beta1) 0.5->default (0.9)
+
+2->3
+Adam (beta1, beta2) set to 0.5
+kernel size reset to 3,3
+second to last deconv layer changed from 32->128

@@ -1,6 +1,6 @@
 # GAN_test
 
-This repository is a collection of testing with generative adversarial networks.
+This repository is a collection of testing with generative adversarial networks. Most image data is being excluded, with the exception of those used in the README.
 
 ## Generative Adversarial Networks
 
@@ -31,7 +31,9 @@ Example: Comparison of Semisupervised Discriminator Ability vs Supervised Classi
 
 ### Comparisons
 
-This folder consists of attempts to tune the batch size hyperparameter. This contains:
+ This contains:
  - mnist_supervised.py - a control MNIST classifier
  - mnist_unsupervised.py - a traditional DCGAN where the discriminator only attempts to distinguish between "real" and "fake"
  - mnist_semisupervised.py - a modified version of the DCGAN where the discriminator attempts to distinguish between "fake" or one of the ten real numbers
+
+ The directory also contains output folders with attempts at tuning different hyperparameters - optimization parameters, batch size, activation values, GAN structure, etc.

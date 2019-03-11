@@ -105,6 +105,7 @@ venv.bak/
 
 # training and test image data
 stanford_car/car_data/
+<<<<<<< HEAD
 *.jpg
 *.png
 

@@ -107,3 +107,8 @@ venv.bak/
 stanford_car/car_data/
 *.jpg
 *.png
+
+# tensorflow saved models
+*.meta
+*.data-00000-of-00001
+*.index

@@ -39,8 +39,42 @@ tf.set_random_seed(0)
 NUM_ITERATIONS=1000
 FLAGS = None
 
+def mont2(images):
+    tensor_shape = images.shape#get_shape().as_list()
+    img_h = tensor_shape[1]
+    img_w = tensor_shape[2]
+    n_plots=0
+    if tensor_shape[0] is not None:
+        n_plots = int(np.ceil( tensor_shape[0]**0.5 ))
+    m = np.ones( (tensor_shape[1] * n_plots + n_plots + 1, tensor_shape[2] * n_plots + n_plots + 1, tensor_shape[3])) * 0.5
+    for i in range(n_plots):
+        for j in range(n_plots):
+            this_filter = i * n_plots + j
+            if this_filter < tensor_shape[0]:
+                this_img = images[this_filter]
+                m[1 + i + i * img_h:1 + i + (i + 1) * img_h,
+                  1 + j + j * img_w:1 + j + (j + 1) * img_w] = this_img
+    return tf.image.encode_jpeg( tf.convert_to_tensor(m, tf.uint8), format='rgb', quality=100 ) #m
+
 # Code by Parag Mital (github.com/pkmital/CADL)
 def montage(images):
+    #if isinstance(images, list):
+    #    images = np.array(images)
+    tensor_shape = images.get_shape().as_list()#images.get_shape().as_list()
+    img_h = tensor_shape[1]
+    img_w = tensor_shape[2]
+    n_plots=0
+    if tensor_shape[0] is not None:
+        n_plots = int(np.ceil( tensor_shape[0]**0.5 ))
+    m = np.ones((tensor_shape[1] * n_plots + n_plots + 1, tensor_shape[2] * n_plots + n_plots + 1)) * 0.5
+    for i in range(n_plots):
+        for j in range(n_plots):
+            this_filter = i * n_plots + j
+            if this_filter < tensor_shape[0]:
+                this_img = images[this_filter]
+                m[1 + i + i * img_h:1 + i + (i + 1) * img_h,
+                  1 + j + j * img_w:1 + j + (j + 1) * img_w] = this_img
+    '''
     if isinstance(images, list):
         images = np.array(images)
     img_h = images.shape[1]
@@ -54,6 +88,7 @@ def montage(images):
                 this_img = images[this_filter]
                 m[1 + i + i * img_h:1 + i + (i + 1) * img_h,
                   1 + j + j * img_w:1 + j + (j + 1) * img_w] = this_img
+    '''
     return m
 
 def generate_identity():
@@ -89,22 +124,29 @@ def setup_output_directory(args):
         os.mkdir(output_dir)
         os.mkdir(("%s/model"%output_dir))
         os.mkdir(("%s/output"%output_dir))
+        os.mkdir(("%s/output/train"%output_dir))
+        os.mkdir(("%s/output/test"%output_dir))
     return output_dir
+
+def get_jpg(data):
+    return tf.image.encode_jpeg(data, format='rgb', quality=100)
 
 def train_gan(args):
     gen=Generator()
     disc=Discriminator()
 
-    keep_prob=tf.placeholder(tf.float32, None) #dropout keep probability
+    drop_prob=tf.placeholder(tf.float32, None) #dropout keep probability
     is_training=tf.placeholder(tf.bool, None)
 
     x = tf.placeholder(tf.float32, [None, 64, 64, 3])
     y_labels = tf.placeholder(tf.int32, [None,1])
-    y = disc.classify(tf.reshape(x,[-1,64,64,3]),keep_prob,is_training)
+    y = disc.classify(tf.reshape(x,[-1,64,64,3]),drop_prob,is_training)
 
     noise=tf.placeholder(tf.float32,[None,512])
-    fake_x=gen.generate(noise,keep_prob,is_training)
-    fake_y=disc.classify(fake_x,keep_prob,is_training,reuse=True)
+    fake_x=gen.generate(noise,drop_prob,is_training)
+    fake_y=disc.classify(fake_x,drop_prob,is_training,reuse=True)
+
+    jpg_test_fake = tf.image.encode_jpeg( tf.cast(fake_x[0],tf.uint8), format='rgb', quality=100 ) #tf.map_fn(get_jpg, int_fake_x)
 
     #generators
     gen_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,scope="GAN/Generator")
@@ -118,8 +160,8 @@ def train_gan(args):
 
     gen_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_y), logits=fake_y))
 
-    disc_train_step = tf.train.AdamOptimizer(0.0005,beta1=0.5,beta2=0.5).minimize(disc_loss,var_list=disc_vars)
-    gen_train_step = tf.train.AdamOptimizer(0.0005,beta1=0.5,beta2=0.5).minimize(gen_loss,var_list=gen_vars)
+    disc_train_step = tf.train.AdamOptimizer(0.0005,beta1=0.5).minimize(disc_loss,var_list=disc_vars)
+    gen_train_step = tf.train.AdamOptimizer(0.0005,beta1=0.5).minimize(gen_loss,var_list=gen_vars)
 
     init=tf.global_variables_initializer()
     sess = tf.Session()
@@ -171,13 +213,13 @@ def train_gan(args):
             batch_ys = tf.ones([tf.shape(batch_xs)[0],1])
             uniform_noise=normal_data_gen(batch_size)
 
-            d_loss, d_steps = sess.run([disc_loss, disc_train_step], feed_dict={keep_prob:0.7, is_training:True, \
+            d_loss, d_steps = sess.run([disc_loss, disc_train_step], feed_dict={drop_prob:0.3, is_training:True, \
                                     x: batch_xs,
                                     y_labels: sess.run(batch_ys),
                                     noise: uniform_noise})
-
+            #print(batch_xs)
             uniform_noise=normal_data_gen(batch_size)
-            g_loss,g_steps=sess.run([gen_loss, gen_train_step], feed_dict={keep_prob:0.7, is_training:True, noise: uniform_noise})
+            g_loss,g_steps=sess.run([gen_loss, gen_train_step], feed_dict={drop_prob:0.3, is_training:True, noise: uniform_noise})
 
             print("Discriminator loss: ",d_loss, d_steps)
             print("Generator loss: ",g_loss, g_steps)
@@ -197,15 +239,22 @@ def train_gan(args):
                 print("\nGenerator Progress\n")
 
                 for it in range(1):
-                    x_val,y_val=sess.run([fake_x,fake_y],feed_dict={keep_prob:0.7, is_training:False, noise: show_z})
+                    x_val,y_val,singleton=sess.run([fake_x,fake_y, jpg_test_fake],feed_dict={drop_prob:0.0, is_training:False, noise: show_z})
                     print("y val: ",y_val)
                     imgs = [img[:,:,0] for img in x_val]
 
-                    gen_img = montage(imgs)
-                    plt.axis('off')
-                    plt.imshow(gen_img)
-                    plt.savefig("%s/output/test_it%d.png"%(output_dir,batch_num))
-                    plt.clf()
+                    montaged=sess.run(mont2(x_val))
+
+                    with open("%s/output/test/test_it%04d_single.jpg"%(output_dir,batch_num), "w") as f:
+                        f.write(singleton)
+                    with open("%s/output/test/test_it%04d_multi.jpg"%(output_dir,batch_num), "w") as f:
+                        f.write(montaged)
+
+                    #gen_img = montage(imgs)
+                    #plt.axis('off')
+                    #plt.imshow(gen_img)
+                    #plt.savefig("%s/output/test_it%d.png"%(output_dir,batch_num))
+                    #plt.clf()
                     #plt.show()
 
                     plt.plot(np.linspace(0,len(past_dlosses),len(past_dlosses)),past_dlosses,label="dloss")
@@ -214,20 +263,28 @@ def train_gan(args):
                     plt.xlabel('Iteration')
                     plt.ylabel('Loss')
                     plt.legend()
-                    plt.savefig("%s/output/progress%d.png"%(output_dir,batch_num))
+                    #plt.savefig("%s/output/progress%d.png"%(output_dir,batch_num))
                     plt.clf()
                     #plt.show()
 
                 for it in range(1):
-                    x_val,y_val=sess.run([fake_x,fake_y],feed_dict={keep_prob:0.7, is_training:True, noise: show_z})
+                    x_val,y_val,singleton=sess.run([fake_x,fake_y, jpg_test_fake],feed_dict={x:batch_xs, drop_prob:0.3, is_training:False, noise: show_z})
+
+                    montaged=sess.run(mont2(x_val))
+
+                    with open("%s/output/train/train_it%04d_single.jpg"%(output_dir,batch_num), "w") as f:
+                        f.write(singleton)
+                    with open("%s/output/train/train_it%04d_multi.jpg"%(output_dir,batch_num), "w") as f:
+                        f.write(montaged)
+
                     print("y val: ",y_val)
                     imgs = [img[:,:,0] for img in x_val]
 
-                    gen_img = montage(imgs)
-                    plt.axis('off')
-                    plt.imshow(gen_img)
-                    plt.savefig("%s/output/train_it%04d.png"%(output_dir,batch_num))
-                    plt.clf()
+                    #gen_img = montage(imgs)
+                    #plt.axis('off')
+                    #plt.imshow(gen_img)
+                    #plt.savefig("%s/output/train_it%04d.jpg"%(output_dir,batch_num))
+                    #plt.clf()
                     #plt.show()
 
                 saver.save(sess, ('%s/model_it%d'%(output_dir,batch_num)), write_meta_graph=False)

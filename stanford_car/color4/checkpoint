@@ -1,0 +1,6 @@
+model_checkpoint_path: "model_it6150"
+all_model_checkpoint_paths: "model_it5950"
+all_model_checkpoint_paths: "model_it6000"
+all_model_checkpoint_paths: "model_it6050"
+all_model_checkpoint_paths: "model_it6100"
+all_model_checkpoint_paths: "model_it6150"

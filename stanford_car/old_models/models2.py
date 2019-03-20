@@ -18,7 +18,7 @@ class Generator:
             conv3=tf.nn.dropout(tf.layers.conv2d_transpose(n2,filters=32,kernel_size=(5,5),strides=(2,2),padding="SAME",activation=tf.nn.leaky_relu,name="dconv3"), keep, name="drop3")#128
             n3=tf.keras.layers.BatchNormalization(name="batch_norm3")(conv3,training=is_training)
 
-            out=tf.layers.conv2d_transpose(n3,filters=3,kernel_size=(5,5),strides=(2,2),padding="SAME",activation=tf.nn.sigmoid,name="dconv4")#128x128
+            out=255*tf.layers.conv2d_transpose(n3,filters=3,kernel_size=(5,5),strides=(2,2),padding="SAME",activation=tf.nn.sigmoid,name="dconv4")#128x128
         return out
 
 class Discriminator:
